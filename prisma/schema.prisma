@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+enum BrainCategory {
+  idea
+  bug
+  learning
+  snippet
+  thought
+  research
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  name         String
+  role         String       @default("user")
+  lastLoginAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  tasks        Task[]
+  attendances  Attendance[]
+  brainNotes   BrainNote[]
+  sessions     Session[]
+}
+
+model Task {
+  id                 String       @id @default(cuid())
+  userId             String
+  taskName           String
+  date               String
+  duration           Float
+  status             TaskStatus   @default(pending)
+  priority           TaskPriority
+  client             String       @default("")
+  technologies       String[]
+  tags               String[]
+  startTime          DateTime?
+  endTime            DateTime?
+  totalTimeSpent     Int?
+  isTimeTracked      Boolean      @default(false)
+  manualTimeOverride Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, status])
+  @@index([userId, priority])
+}
+
+model Attendance {
+  id                String    @id @default(cuid())
+  userId            String
+  date              String
+  checkIn           DateTime?
+  checkOut          DateTime?
+  status            String    @default("absent")
+  breaks            Json      @default("[]")
+  deepWorkSessions  Json      @default("[]")
+  timeline          Json      @default("[]")
+  totalWorkMinutes  Int       @default(0)
+  totalBreakMinutes Int       @default(0)
+  deepWorkMinutes   Int       @default(0)
+  overtimeMinutes   Int       @default(0)
+  tasksCompleted    Int       @default(0)
+  productivityScore Int       @default(0)
+  burnoutRisk       String    @default("low")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model BrainNote {
+  id           String        @id @default(cuid())
+  userId       String
+  title        String
+  content      String        @db.Text
+  category     BrainCategory @default(thought)
+  tags         String[]
+  keywords     String[]
+  relatedNotes Json          @default("[]")
+  relatedTasks Json          @default("[]")
+  favorite     Boolean       @default(false)
+  pinned       Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+  @@index([userId, favorite])
+  @@index([userId, pinned])
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  refreshTokenHash String
+  userAgent        String?
+  ipAddress        String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}

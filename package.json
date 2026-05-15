@@ -1,0 +1,54 @@
+{
+  "name": "taskflow-backend",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Production backend for TaskFlow AI",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "XDG_CACHE_HOME=./.cache PRISMA_ENGINES_CACHE_DIR=./.prisma-cache prisma generate && tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "lint": "XDG_CACHE_HOME=./.cache PRISMA_ENGINES_CACHE_DIR=./.prisma-cache prisma generate && tsc --noEmit -p tsconfig.json",
+    "test": "npm run lint",
+    "db:generate": "XDG_CACHE_HOME=./.cache PRISMA_ENGINES_CACHE_DIR=./.prisma-cache prisma generate",
+    "db:migrate": "XDG_CACHE_HOME=./.cache PRISMA_ENGINES_CACHE_DIR=./.prisma-cache prisma migrate deploy",
+    "db:migrate:dev": "XDG_CACHE_HOME=./.cache PRISMA_ENGINES_CACHE_DIR=./.prisma-cache prisma migrate dev",
+    "db:push": "XDG_CACHE_HOME=./.cache PRISMA_ENGINES_CACHE_DIR=./.prisma-cache prisma db push",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.9.0",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "pino": "^9.7.0",
+    "pino-http": "^10.4.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/compression": "^1.7.5",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/hpp": "^0.2.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.15.21",
+    "prisma": "^6.9.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}

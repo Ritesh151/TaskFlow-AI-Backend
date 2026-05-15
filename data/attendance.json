@@ -1,0 +1,43 @@
+[
+  {
+    "attendanceId": "7561c79a-b8e8-4793-9c4c-0923fff30149",
+    "date": "2026-05-12",
+    "checkIn": null,
+    "checkOut": null,
+    "status": "absent",
+    "breaks": [],
+    "deepWorkSessions": [],
+    "timeline": [],
+    "totalWorkMinutes": 0,
+    "totalBreakMinutes": 0,
+    "deepWorkMinutes": 0,
+    "overtimeMinutes": 0,
+    "tasksCompleted": 0,
+    "productivityScore": 0,
+    "burnoutRisk": "low",
+    "createdAt": "2026-05-12T11:01:52.546Z"
+  },
+  {
+    "attendanceId": "2b3dd3b8-dde0-47fd-ba63-3ca85dc5e8a0",
+    "date": "2026-05-15",
+    "checkIn": "2026-05-15T07:26:25.800Z",
+    "checkOut": null,
+    "status": "half-day",
+    "breaks": [],
+    "deepWorkSessions": [],
+    "timeline": [
+      {
+        "time": "2026-05-15T07:26:25.800Z",
+        "action": "check-in"
+      }
+    ],
+    "totalWorkMinutes": 73,
+    "totalBreakMinutes": 0,
+    "deepWorkMinutes": 0,
+    "overtimeMinutes": 0,
+    "tasksCompleted": 0,
+    "productivityScore": 10,
+    "burnoutRisk": "low",
+    "createdAt": "2026-05-15T07:22:53.837Z"
+  }
+]
