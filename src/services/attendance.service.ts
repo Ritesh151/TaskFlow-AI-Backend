@@ -398,49 +398,53 @@ async function getAllRecords(userId: string) {
 }
 
 async function persistRecord(userId: string, record: AttendanceRecordDto) {
-  await prisma.attendance.upsert({
-    where: {
-      userId_date: {
+  const existing = await prisma.attendance.findFirst({
+    where: { userId, date: record.date },
+  });
+
+  if (existing) {
+    await prisma.attendance.update({
+      where: { id: existing.id },
+      data: {
+        checkIn: record.checkIn ? new Date(record.checkIn) : null,
+        checkOut: record.checkOut ? new Date(record.checkOut) : null,
+        status: record.status,
+        breaks: toJsonValue(record.breaks),
+        deepWorkSessions: toJsonValue(record.deepWorkSessions),
+        timeline: toJsonValue(record.timeline),
+        totalWorkMinutes: record.totalWorkMinutes,
+        totalBreakMinutes: record.totalBreakMinutes,
+        deepWorkMinutes: record.deepWorkMinutes,
+        overtimeMinutes: record.overtimeMinutes,
+        tasksCompleted: record.tasksCompleted,
+        productivityScore: record.productivityScore,
+        burnoutRisk: record.burnoutRisk,
+        updatedAt: new Date(),
+      },
+    });
+  } else {
+    await prisma.attendance.create({
+      data: {
+        id: record.attendanceId,
         userId,
         date: record.date,
+        checkIn: record.checkIn ? new Date(record.checkIn) : null,
+        checkOut: record.checkOut ? new Date(record.checkOut) : null,
+        status: record.status,
+        breaks: toJsonValue(record.breaks),
+        deepWorkSessions: toJsonValue(record.deepWorkSessions),
+        timeline: toJsonValue(record.timeline),
+        totalWorkMinutes: record.totalWorkMinutes,
+        totalBreakMinutes: record.totalBreakMinutes,
+        deepWorkMinutes: record.deepWorkMinutes,
+        overtimeMinutes: record.overtimeMinutes,
+        tasksCompleted: record.tasksCompleted,
+        productivityScore: record.productivityScore,
+        burnoutRisk: record.burnoutRisk,
+        createdAt: new Date(record.createdAt),
       },
-    },
-    create: {
-      id: record.attendanceId,
-      userId,
-      date: record.date,
-      checkIn: record.checkIn ? new Date(record.checkIn) : null,
-      checkOut: record.checkOut ? new Date(record.checkOut) : null,
-      status: record.status,
-      breaks: toJsonValue(record.breaks),
-      deepWorkSessions: toJsonValue(record.deepWorkSessions),
-      timeline: toJsonValue(record.timeline),
-      totalWorkMinutes: record.totalWorkMinutes,
-      totalBreakMinutes: record.totalBreakMinutes,
-      deepWorkMinutes: record.deepWorkMinutes,
-      overtimeMinutes: record.overtimeMinutes,
-      tasksCompleted: record.tasksCompleted,
-      productivityScore: record.productivityScore,
-      burnoutRisk: record.burnoutRisk,
-      createdAt: new Date(record.createdAt),
-    },
-    update: {
-      checkIn: record.checkIn ? new Date(record.checkIn) : null,
-      checkOut: record.checkOut ? new Date(record.checkOut) : null,
-      status: record.status,
-      breaks: toJsonValue(record.breaks),
-      deepWorkSessions: toJsonValue(record.deepWorkSessions),
-      timeline: toJsonValue(record.timeline),
-      totalWorkMinutes: record.totalWorkMinutes,
-      totalBreakMinutes: record.totalBreakMinutes,
-      deepWorkMinutes: record.deepWorkMinutes,
-      overtimeMinutes: record.overtimeMinutes,
-      tasksCompleted: record.tasksCompleted,
-      productivityScore: record.productivityScore,
-      burnoutRisk: record.burnoutRisk,
-      updatedAt: new Date(),
-    },
-  });
+    });
+  }
 }
 
 async function refreshComputedFields(userId: string, record: AttendanceRecordDto, tasks: TaskDto[], allRecords?: AttendanceRecordDto[]) {
@@ -459,13 +463,8 @@ async function refreshComputedFields(userId: string, record: AttendanceRecordDto
 
 async function getOrCreateToday(userId: string) {
   const today = todayStr();
-  const record = await prisma.attendance.findUnique({
-    where: {
-      userId_date: {
-        userId,
-        date: today,
-      },
-    },
+  const record = await prisma.attendance.findFirst({
+    where: { userId, date: today },
   });
 
   if (record) {

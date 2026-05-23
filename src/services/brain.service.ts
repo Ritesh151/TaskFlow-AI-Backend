@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma';
 import { notFound } from '../lib/errors';
 import type {
@@ -684,6 +685,7 @@ export async function createBrainNote(
 
   const note = await prisma.brainNote.create({
     data: {
+      id: randomUUID(),
       userId,
       title: finalTitle,
       content,

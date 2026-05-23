@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma';
 import { notFound } from '../lib/errors';
 import type { TaskDto, TaskPriorityValue, TaskStatusValue } from '../types/domain';
@@ -148,6 +149,7 @@ export async function getTaskById(userId: string, id: string) {
 export async function createTask(userId: string, input: TaskMutation) {
   const task = await prisma.task.create({
     data: {
+      id: randomUUID(),
       userId,
       ...buildTaskData(input),
     },

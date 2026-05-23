@@ -1,7 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import bcrypt from 'bcryptjs';
-import { BrainCategory, PrismaClient, TaskPriority, TaskStatus } from '@prisma/client';
+import { type Prisma, BrainCategory, PrismaClient, TaskPriority, TaskStatus } from '@prisma/client';
 import { env } from '../src/config/env';
 
 const prisma = new PrismaClient();
@@ -81,6 +82,7 @@ async function main() {
       passwordHash,
     },
     create: {
+      id: randomUUID(),
       email: env.SEED_USER_EMAIL,
       name: env.SEED_USER_NAME,
       passwordHash,
@@ -97,76 +99,88 @@ async function main() {
   if (taskCount === 0) {
     const tasks = await readJsonFile<LegacyTask>('tasks.json');
     if (tasks.length > 0) {
-      await prisma.task.createMany({
-        data: tasks.map((task) => ({
-          id: task.taskId,
-          userId: user.id,
-          taskName: task.taskName,
-          date: task.date,
-          duration: Number(task.duration) || 0,
-          status: task.status ?? TaskStatus.pending,
-          priority: task.priority,
-          client: task.client ?? '',
-          technologies: task.technologies ?? [],
-          tags: task.tags ?? [],
-          startTime: task.startTime ? new Date(task.startTime) : null,
-          endTime: task.endTime ? new Date(task.endTime) : null,
-          totalTimeSpent: task.totalTimeSpent ?? null,
-          isTimeTracked: task.isTimeTracked ?? Boolean(task.startTime || task.endTime),
-          manualTimeOverride: task.manualTimeOverride ?? false,
-          createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
-        })),
-      });
+      await prisma.$transaction(
+        tasks.map((task) =>
+          prisma.task.create({
+            data: {
+              id: task.taskId,
+              userId: user.id,
+              taskName: task.taskName,
+              date: task.date,
+              duration: Number(task.duration) || 0,
+              status: task.status ?? TaskStatus.pending,
+              priority: task.priority,
+              client: task.client ?? '',
+              technologies: task.technologies ?? [],
+              tags: task.tags ?? [],
+              startTime: task.startTime ? new Date(task.startTime) : null,
+              endTime: task.endTime ? new Date(task.endTime) : null,
+              totalTimeSpent: task.totalTimeSpent ?? null,
+              isTimeTracked: task.isTimeTracked ?? Boolean(task.startTime || task.endTime),
+              manualTimeOverride: task.manualTimeOverride ?? false,
+              createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
+            },
+          }),
+        ),
+      );
     }
   }
 
   if (attendanceCount === 0) {
     const attendances = await readJsonFile<LegacyAttendance>('attendance.json');
     if (attendances.length > 0) {
-      await prisma.attendance.createMany({
-        data: attendances.map((record) => ({
-          id: record.attendanceId,
-          userId: user.id,
-          date: record.date,
-          checkIn: record.checkIn ? new Date(record.checkIn) : null,
-          checkOut: record.checkOut ? new Date(record.checkOut) : null,
-          status: record.status,
-          breaks: record.breaks,
-          deepWorkSessions: record.deepWorkSessions,
-          timeline: record.timeline,
-          totalWorkMinutes: record.totalWorkMinutes,
-          totalBreakMinutes: record.totalBreakMinutes,
-          deepWorkMinutes: record.deepWorkMinutes,
-          overtimeMinutes: record.overtimeMinutes,
-          tasksCompleted: record.tasksCompleted,
-          productivityScore: record.productivityScore,
-          burnoutRisk: record.burnoutRisk,
-          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
-        })),
-      });
+      await prisma.$transaction(
+        attendances.map((record) =>
+          prisma.attendance.create({
+            data: {
+              id: record.attendanceId,
+              userId: user.id,
+              date: record.date,
+              checkIn: record.checkIn ? new Date(record.checkIn) : null,
+              checkOut: record.checkOut ? new Date(record.checkOut) : null,
+              status: record.status,
+              breaks: record.breaks as Prisma.InputJsonValue,
+              deepWorkSessions: record.deepWorkSessions as Prisma.InputJsonValue,
+              timeline: record.timeline as Prisma.InputJsonValue,
+              totalWorkMinutes: record.totalWorkMinutes,
+              totalBreakMinutes: record.totalBreakMinutes,
+              deepWorkMinutes: record.deepWorkMinutes,
+              overtimeMinutes: record.overtimeMinutes,
+              tasksCompleted: record.tasksCompleted,
+              productivityScore: record.productivityScore,
+              burnoutRisk: record.burnoutRisk,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+            },
+          }),
+        ),
+      );
     }
   }
 
   if (noteCount === 0) {
     const notes = await readJsonFile<LegacyBrainNote>('brain.json');
     if (notes.length > 0) {
-      await prisma.brainNote.createMany({
-        data: notes.map((note) => ({
-          id: note.brainId,
-          userId: user.id,
-          title: note.title,
-          content: note.content,
-          category: note.category ?? BrainCategory.thought,
-          tags: note.tags ?? [],
-          keywords: note.keywords ?? [],
-          relatedNotes: note.relatedNotes ?? [],
-          relatedTasks: note.relatedTasks ?? [],
-          favorite: note.favorite ?? false,
-          pinned: note.pinned ?? false,
-          createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
-          updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
-        })),
-      });
+      await prisma.$transaction(
+        notes.map((note) =>
+          prisma.brainNote.create({
+            data: {
+              id: note.brainId,
+              userId: user.id,
+              title: note.title,
+              content: note.content,
+              category: note.category ?? BrainCategory.thought,
+              tags: note.tags ?? [],
+              keywords: note.keywords ?? [],
+              relatedNotes: note.relatedNotes as Prisma.InputJsonValue,
+              relatedTasks: note.relatedTasks as Prisma.InputJsonValue,
+              favorite: note.favorite ?? false,
+              pinned: note.pinned ?? false,
+              createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
+              updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
+            },
+          }),
+        ),
+      );
     }
   }
 }

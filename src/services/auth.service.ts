@@ -91,6 +91,7 @@ export async function ensureSeedUser() {
   const passwordHash = await bcrypt.hash(env.SEED_USER_PASSWORD, env.BCRYPT_SALT_ROUNDS);
   return prisma.user.create({
     data: {
+      id: randomUUID(),
       email: env.SEED_USER_EMAIL.toLowerCase(),
       name: env.SEED_USER_NAME,
       passwordHash,

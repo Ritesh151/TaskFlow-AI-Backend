@@ -118,7 +118,7 @@ app.get('/api/health', (_request, response) => sendHealth(response, 'ok'));
 app.get('/api/live', (_request, response) => sendHealth(response, 'ok'));
 app.get('/api/ready', async (_request, response, next) => {
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await prisma.$runCommandRaw({ ping: 1 });
     return sendHealth(response, 'ready');
   } catch (error) {
     return next(new AppError('Database not ready', 503, 'DATABASE_NOT_READY'));

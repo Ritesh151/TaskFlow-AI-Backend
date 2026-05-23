@@ -18,6 +18,7 @@ async function bootstrap() {
         if (shuttingDown) {
             return;
         }
+        
         shuttingDown = true;
         logger_1.logger.info({ signal }, 'Graceful shutdown started');
         server.close(async () => {
