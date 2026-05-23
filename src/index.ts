@@ -8,8 +8,13 @@ import { ensureSeedUser } from './services/auth.service';
 let shuttingDown = false;
 
 async function bootstrap() {
+  logger.info('Connecting to database...');
   await prisma.$connect();
+  logger.info('Database connected successfully');
+
+  logger.info('Ensuring seed user exists...');
   await ensureSeedUser();
+  logger.info('Seed user check complete');
 
   const server = createServer(app);
 
@@ -59,6 +64,7 @@ async function bootstrap() {
 
 void bootstrap().catch(async (error) => {
   logger.fatal({ err: error }, 'Failed to bootstrap backend');
+  logger.error('Backend startup failed. Check your environment variables and database connection.');
   await prisma.$disconnect();
   process.exit(1);
 });

@@ -8,6 +8,7 @@ exports.createTask = createTask;
 exports.updateTask = updateTask;
 exports.completeTask = completeTask;
 exports.deleteTask = deleteTask;
+const node_crypto_1 = require("node:crypto");
 const prisma_1 = require("../lib/prisma");
 const errors_1 = require("../lib/errors");
 const strings_1 = require("../utils/strings");
@@ -120,6 +121,7 @@ async function getTaskById(userId, id) {
 async function createTask(userId, input) {
     const task = await prisma_1.prisma.task.create({
         data: {
+            id: (0, node_crypto_1.randomUUID)(),
             userId,
             ...buildTaskData(input),
         },

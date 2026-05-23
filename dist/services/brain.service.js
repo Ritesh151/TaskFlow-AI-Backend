@@ -8,6 +8,7 @@ exports.updateBrainNote = updateBrainNote;
 exports.toggleBrainFavorite = toggleBrainFavorite;
 exports.toggleBrainPin = toggleBrainPin;
 exports.deleteBrainNote = deleteBrainNote;
+const node_crypto_1 = require("node:crypto");
 const prisma_1 = require("../lib/prisma");
 const errors_1 = require("../lib/errors");
 const task_service_1 = require("./task.service");
@@ -573,6 +574,7 @@ async function createBrainNote(userId, input) {
     const keywords = extractKeywords(`${finalTitle} ${content}`, tags);
     const note = await prisma_1.prisma.brainNote.create({
         data: {
+            id: (0, node_crypto_1.randomUUID)(),
             userId,
             title: finalTitle,
             content,

@@ -2,7 +2,6 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.app = void 0;
 const compression_1 = __importDefault(require("compression"));
@@ -101,11 +100,12 @@ app.use('/api/auth', (0, express_rate_limit_1.default)({
         code: 'AUTH_RATE_LIMITED',
     },
 }));
+
 app.get('/api/health', (_request, response) => (0, notFound_1.sendHealth)(response, 'ok'));
 app.get('/api/live', (_request, response) => (0, notFound_1.sendHealth)(response, 'ok'));
 app.get('/api/ready', async (_request, response, next) => {
     try {
-        await prisma_1.prisma.$queryRaw `SELECT 1`;
+        await prisma_1.prisma.$runCommandRaw({ ping: 1 });
         return (0, notFound_1.sendHealth)(response, 'ready');
     }
     catch (error) {

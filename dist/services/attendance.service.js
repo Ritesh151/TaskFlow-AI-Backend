@@ -341,49 +341,53 @@ async function getAllRecords(userId) {
     return records.map(serializeAttendance);
 }
 async function persistRecord(userId, record) {
-    await prisma_1.prisma.attendance.upsert({
-        where: {
-            userId_date: {
+    const existing = await prisma_1.prisma.attendance.findFirst({
+        where: { userId, date: record.date },
+    });
+    if (existing) {
+        await prisma_1.prisma.attendance.update({
+            where: { id: existing.id },
+            data: {
+                checkIn: record.checkIn ? new Date(record.checkIn) : null,
+                checkOut: record.checkOut ? new Date(record.checkOut) : null,
+                status: record.status,
+                breaks: toJsonValue(record.breaks),
+                deepWorkSessions: toJsonValue(record.deepWorkSessions),
+                timeline: toJsonValue(record.timeline),
+                totalWorkMinutes: record.totalWorkMinutes,
+                totalBreakMinutes: record.totalBreakMinutes,
+                deepWorkMinutes: record.deepWorkMinutes,
+                overtimeMinutes: record.overtimeMinutes,
+                tasksCompleted: record.tasksCompleted,
+                productivityScore: record.productivityScore,
+                burnoutRisk: record.burnoutRisk,
+                updatedAt: new Date(),
+            },
+        });
+    }
+    else {
+        await prisma_1.prisma.attendance.create({
+            data: {
+                id: record.attendanceId,
                 userId,
                 date: record.date,
+                checkIn: record.checkIn ? new Date(record.checkIn) : null,
+                checkOut: record.checkOut ? new Date(record.checkOut) : null,
+                status: record.status,
+                breaks: toJsonValue(record.breaks),
+                deepWorkSessions: toJsonValue(record.deepWorkSessions),
+                timeline: toJsonValue(record.timeline),
+                totalWorkMinutes: record.totalWorkMinutes,
+                totalBreakMinutes: record.totalBreakMinutes,
+                deepWorkMinutes: record.deepWorkMinutes,
+                overtimeMinutes: record.overtimeMinutes,
+                tasksCompleted: record.tasksCompleted,
+                productivityScore: record.productivityScore,
+                burnoutRisk: record.burnoutRisk,
+                createdAt: new Date(record.createdAt),
             },
-        },
-        create: {
-            id: record.attendanceId,
-            userId,
-            date: record.date,
-            checkIn: record.checkIn ? new Date(record.checkIn) : null,
-            checkOut: record.checkOut ? new Date(record.checkOut) : null,
-            status: record.status,
-            breaks: toJsonValue(record.breaks),
-            deepWorkSessions: toJsonValue(record.deepWorkSessions),
-            timeline: toJsonValue(record.timeline),
-            totalWorkMinutes: record.totalWorkMinutes,
-            totalBreakMinutes: record.totalBreakMinutes,
-            deepWorkMinutes: record.deepWorkMinutes,
-            overtimeMinutes: record.overtimeMinutes,
-            tasksCompleted: record.tasksCompleted,
-            productivityScore: record.productivityScore,
-            burnoutRisk: record.burnoutRisk,
-            createdAt: new Date(record.createdAt),
-        },
-        update: {
-            checkIn: record.checkIn ? new Date(record.checkIn) : null,
-            checkOut: record.checkOut ? new Date(record.checkOut) : null,
-            status: record.status,
-            breaks: toJsonValue(record.breaks),
-            deepWorkSessions: toJsonValue(record.deepWorkSessions),
-            timeline: toJsonValue(record.timeline),
-            totalWorkMinutes: record.totalWorkMinutes,
-            totalBreakMinutes: record.totalBreakMinutes,
-            deepWorkMinutes: record.deepWorkMinutes,
-            overtimeMinutes: record.overtimeMinutes,
-            tasksCompleted: record.tasksCompleted,
-            productivityScore: record.productivityScore,
-            burnoutRisk: record.burnoutRisk,
-            updatedAt: new Date(),
-        },
-    });
+        });
+    }
 }
 async function refreshComputedFields(userId, record, tasks, allRecords) {
     const computed = computeRecord(record);
@@ -400,13 +404,8 @@ async function refreshComputedFields(userId, record, tasks, allRecords) {
 }
 async function getOrCreateToday(userId) {
     const today = (0, dates_1.todayStr)();
-    const record = await prisma_1.prisma.attendance.findUnique({
-        where: {
-            userId_date: {
-                userId,
-                date: today,
-            },
-        },
+    const record = await prisma_1.prisma.attendance.findFirst({
+        where: { userId, date: today },
     });
     if (record) {
         return serializeAttendance(record);

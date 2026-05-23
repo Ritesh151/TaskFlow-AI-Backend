@@ -51,6 +51,8 @@ async function issueSession(user: PersistedUser, context: SessionContext, existi
   const refreshToken = signRefreshToken(user.id, user.email, sessionId);
   const accessToken = signAccessToken(user.id, user.email, sessionId);
 
+  authLogger.info({ userId: user.id, sessionId }, 'JWT access + refresh tokens generated');
+
   const sessionData = {
     userId: user.id,
     refreshTokenHash: sha256(refreshToken),
@@ -72,6 +74,8 @@ async function issueSession(user: PersistedUser, context: SessionContext, existi
         },
       });
 
+  authLogger.info({ sessionId, userId: user.id }, 'Session persisted in database');
+
   return {
     accessToken,
     refreshToken,
@@ -85,10 +89,12 @@ export async function ensureSeedUser() {
   });
 
   if (existing) {
+    authLogger.info({ email: env.SEED_USER_EMAIL }, 'Seed user already exists — skipping creation');
     return existing;
   }
 
   const passwordHash = await bcrypt.hash(env.SEED_USER_PASSWORD, env.BCRYPT_SALT_ROUNDS);
+  authLogger.info({ email: env.SEED_USER_EMAIL }, 'Creating seed user');
   return prisma.user.create({
     data: {
       id: randomUUID(),
@@ -101,6 +107,8 @@ export async function ensureSeedUser() {
 }
 
 export async function loginUser(email: string, password: string, context: SessionContext) {
+  authLogger.info({ email }, 'Login request received');
+
   const user = await prisma.user.findUnique({
     where: { email: email.toLowerCase() },
   });
@@ -110,11 +118,15 @@ export async function loginUser(email: string, password: string, context: Sessio
     throw unauthorized('Invalid email or password');
   }
 
+  authLogger.info({ userId: user.id, email: user.email }, 'Login: user found');
+
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
   if (!isPasswordValid) {
     authLogger.warn({ email }, 'Login failed: password mismatch');
     throw unauthorized('Invalid email or password');
   }
+
+  authLogger.info({ userId: user.id, email: user.email }, 'Login: password matched successfully');
 
   await prisma.user.update({
     where: { id: user.id },
@@ -122,10 +134,14 @@ export async function loginUser(email: string, password: string, context: Sessio
   });
 
   authLogger.info({ userId: user.id, email: user.email }, 'Login succeeded');
-  return issueSession(user, context);
+  const result = await issueSession(user, context);
+  authLogger.info({ userId: user.id }, 'Auth cookies set for user');
+  return result;
 }
 
 export async function refreshUserSession(refreshToken: string, context: SessionContext) {
+  authLogger.info('Refresh token request received');
+
   const payload = verifyRefreshToken(refreshToken);
   const session = await prisma.session.findUnique({
     where: { id: payload.sessionId },
@@ -133,10 +149,12 @@ export async function refreshUserSession(refreshToken: string, context: SessionC
   });
 
   if (!session || session.revokedAt || session.expiresAt.getTime() <= Date.now()) {
+    authLogger.warn({ sessionId: payload.sessionId }, 'Refresh failed: session expired or revoked');
     throw unauthorized('Refresh session expired');
   }
 
   if (session.refreshTokenHash !== sha256(refreshToken)) {
+    authLogger.warn({ sessionId: session.id }, 'Refresh failed: token hash mismatch — revoking session');
     await prisma.session.update({
       where: { id: session.id },
       data: { revokedAt: new Date() },
@@ -144,12 +162,13 @@ export async function refreshUserSession(refreshToken: string, context: SessionC
     throw unauthorized('Refresh session invalidated');
   }
 
-  authLogger.info({ userId: session.user.id, sessionId: session.id }, 'Refreshing session');
+  authLogger.info({ userId: session.user.id, sessionId: session.id }, 'Refresh executed successfully');
   return issueSession(session.user, context, session.id);
 }
 
 export async function logoutUser(refreshToken?: string) {
   if (!refreshToken) {
+    authLogger.info('Logout: no refresh token provided');
     return;
   }
 
@@ -171,6 +190,8 @@ export async function logoutUser(refreshToken?: string) {
 }
 
 export async function getCurrentSession(userId: string, auth: TokenPayload) {
+  authLogger.info({ userId }, 'GET /auth/me request received');
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
@@ -184,9 +205,11 @@ export async function getCurrentSession(userId: string, auth: TokenPayload) {
   });
 
   if (!session || session.revokedAt || session.expiresAt.getTime() <= Date.now()) {
+    authLogger.warn({ sessionId: auth.sessionId }, 'GET /auth/me: session expired');
     throw unauthorized('Session expired');
   }
 
+  authLogger.info({ userId, sessionId: auth.sessionId }, 'GET /auth/me: session valid');
   const accessExpiry = auth.exp ? new Date(auth.exp * 1000) : accessExpiresAt();
   return buildSessionPayload(user, accessExpiry, session);
 }

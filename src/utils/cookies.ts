@@ -9,10 +9,17 @@ type AuthCookiePayload = {
   refreshToken: string;
 };
 
+function resolveSameSite() {
+  if (env.IS_PRODUCTION) {
+    return 'none' as const;
+  }
+  return 'lax' as const;
+}
+
 const baseCookie = {
   httpOnly: true,
   secure: env.IS_PRODUCTION,
-  sameSite: 'strict' as const,
+  sameSite: resolveSameSite(),
   signed: true,
   path: '/',
 };

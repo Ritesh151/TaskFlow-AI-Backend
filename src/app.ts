@@ -61,19 +61,7 @@ app.use(
 app.use(compression());
 app.use(
   cors({
-    origin(origin, callback) {
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
-
-      if (env.FRONTEND_ORIGINS.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new AppError('Origin not allowed', 403, 'CORS_DENIED'));
-    },
+    origin: env.FRONTEND_ORIGINS,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

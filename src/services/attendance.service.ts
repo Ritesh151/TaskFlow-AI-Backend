@@ -117,8 +117,9 @@ function createDefaultRecord(date: string): AttendanceRecordDto {
 }
 
 function computeRecord(record: AttendanceRecordDto) {
+  const today = todayStr();
   const now = new Date().toISOString();
-  const checkOut = record.checkOut || (record.checkIn ? now : null);
+  const checkOut = record.checkOut || (record.checkIn ? (record.date === today ? now : null) : null);
   const totalElapsedMinutes = minutesBetween(record.checkIn, checkOut);
 
   const totalBreakMinutes = record.breaks.reduce(
